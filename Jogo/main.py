@@ -2,7 +2,7 @@ import pygame
 import time
 import random
 import os
-
+from config import mostrar_opcoes
 import pygame.freetype
 
 
@@ -14,13 +14,13 @@ font_path_title = pygame.freetype.Font('PixelifySans-VariableFont_wght.ttf',50)
 
 font_path_options = pygame.freetype.Font('PixelifySans-VariableFont_wght.ttf',25)
 
-
-sla = pygame.transform.scale(pygame.image.load('blz.png'),(120,130))
+dificuldade = ["Fácil","Médio","Díficil"]
 width = 1000
 height = 720
 screen = pygame.display.set_mode((width, height))
 clock = pygame.time.Clock()
 running = True
+
 pygame.display.set_caption('Lâmina Fúngica')
 while running:
 
@@ -33,11 +33,12 @@ while running:
                 if first_option_rect.collidepoint(mouse):
                     print(1)
                 elif second_option_rect.collidepoint(mouse):
-                    print(2)
+                    mostrar_opcoes()
                 elif three_option_rect.collidepoint(mouse):
                     running = False
                 
     mouse = pygame.mouse.get_pos()
+
 
     screen.fill((255,255,255))
     title_surface, titlerect= font_path_title.render("Lâmina Fúngica", (0,0,0))
@@ -55,8 +56,6 @@ while running:
     three_option, three_option_rect = font_path_options.render("Sair", (0,0,0))
     three_option_rect = three_option.get_rect(center = (width//2 , height * 0.68))
     screen.blit(three_option,three_option_rect)
-
-    screen.blit(sla,(0,0))
     
     pygame.display.flip()
 
