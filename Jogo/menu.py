@@ -45,8 +45,7 @@ def menu(screen, font_path_title, font_path_options, clock):
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1: 
                     if first_option_rect.collidepoint(mouse):
-                        print("Iniciar Jogo")
-                        running = False 
+                        running = False
                     elif second_option_rect.collidepoint(mouse):
                         config(screen, font_path_title, font_path_options, clock)  # Chama config()
                     elif three_option_rect.collidepoint(mouse):
@@ -163,6 +162,7 @@ def config(screen, font_path_title, font_path_options, clock):
 
         dif_config, dif_rect = font_path_options.render("Dificuldade", (0, 0, 0))
         dif_rect = dif_config.get_rect(midleft = (width//6, height*0.4))
+        print(dif_rect)
 
         screen.blit(title_config, config_rect)
         screen.blit(dif_config, dif_rect)
@@ -182,4 +182,6 @@ def config(screen, font_path_title, font_path_options, clock):
 
     mostrar_opcoes()
 
+     
 menu(screen, font_path_title, font_path_options, clock)
+    
