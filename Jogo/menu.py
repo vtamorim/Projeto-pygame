@@ -162,7 +162,6 @@ def config(screen, font_path_title, font_path_options, clock):
 
         dif_config, dif_rect = font_path_options.render("Dificuldade", (0, 0, 0))
         dif_rect = dif_config.get_rect(midleft = (width//6, height*0.4))
-        print(dif_rect)
 
         screen.blit(title_config, config_rect)
         screen.blit(dif_config, dif_rect)
