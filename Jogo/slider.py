@@ -19,7 +19,7 @@ Tile_size = 40
 rows = 16
 cols = 150
 Tile_size = screen_height // rows 
-tyles_tipes = 11
+tyles_tipes = 17
 lvl = 1
 # Controle de movimento e ações
 moving_left = False
@@ -44,7 +44,6 @@ red = (255, 0, 0)
 
 def draw_bg():
     screen.fill(BG)
-    pygame.draw.line(screen, red, (0, 300), (screen_width, 300))
 
 class Principal(pygame.sprite.Sprite):
     def __init__(self, char_type, x, y, scale, speed):
@@ -86,11 +85,14 @@ class Principal(pygame.sprite.Sprite):
                     img = pygame.transform.scale(img, (int(img.get_width() * scale), int(img.get_height() * scale))).convert_alpha()
                     temp_list.append(img)    
                 self.animation_list.append(temp_list) 
+
                 
-            
+       
         self.image = self.animation_list[self.action][self.frame_index]
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()    
     def updatesporo(self):
         self.update_animation()
         self.check_alive()
@@ -160,18 +162,28 @@ class Principal(pygame.sprite.Sprite):
         dy += self.vel_y
 
         # Verifica se está no chão
-        if self.rect.bottom + dy > 300:
-            dy = 300 - self.rect.bottom
-            self.in_air = False
+        for tile in world.obstacle_list:
+            if tile[1].colliderect(self.rect.x+dx, self.rect.y,self.width,self.height):
+                dx = 0
+            if tile[1].colliderect(self.rect.x, self.rect.y + dy, self.width, self.height):
+                if self.vel_y < 0 :
+                    self.vel_y  = 0
+                    dy = tile[1].bottom - self.rect.top
+                elif self.vel_y >= 0:
+                    self.vel_y = 0
+                    self.in_air = False
+                    dy = tile[1].top - self.rect.bottom
+                    
+
 
         self.rect.x += dx
         self.rect.y += dy
     def shoot(self):
-        if self.sporo_cooldown == 0:  # Verifica se o cooldown acabou
-            self.sporo_cooldown = 50  # Reinicia o cooldown
-            sporo_sla = Sporo(self.rect.centerx + (self.direction * self.rect.size[0] * 0.1),
-            self.rect.centery + 5, self.direction)  
-            sporo_group.add(sporo_sla)
+        if self.sporo_cooldown == 0:
+            self.sporo_cooldown = 20  # Tempo menor para evitar travamentos
+            new_sporo = Sporo(self.rect.centerx + (self.direction * self.rect.width * 0.6),
+            self.rect.centery, self.direction)
+            sporo_group.add(new_sporo)
     def ai(self):
         if self.alive and player.alive:
             if self.idling == False and random.randint(1,200) == 1:
@@ -228,6 +240,7 @@ class World():
         self.obstacle_list = []
 
     def process_data(self, data):
+        player = None
         for y, row in enumerate(data):
             for x,tile in enumerate(row):
                 if 0 <= tile < len(img_list):
@@ -236,30 +249,29 @@ class World():
                     img_rect.x = x * Tile_size
                     img_rect.y = y * Tile_size
                     tile_data = (img,img_rect)
-                    if tile >= 0 and tile <= 2:
+                    if tile >= 0 and tile <= 8:
                         self.obstacle_list.append(tile_data)
                     elif tile>= 3 and tile <= 5:
                         pass
-                    elif tile == 6:
+                    elif tile == 13:
                         player = Principal('Personagem Principal', x*Tile_size, y*Tile_size, 1.65, 3)
                         health_bar = hearthbar(10,10,player.health,player.health)
-                    elif tile == 7:
+                    elif tile == 14:
                         cogumelo = Principal('tileset_png/inimigo_cogumelo', x*Tile_size,y*Tile_size,0.9,1)
                         sporo_group.add(cogumelo)
                     elif tile == 8:
                         pass
-                    elif tile == 20:
-                        exit= Exit(img,x*Tile_size,y*Tile_size)
-                        exit_group.add(exit)
+                    elif tile == 16:
+                        pass
         return player, health_bar
     def draw(self):
         for tile in self.obstacle_list:
             screen.blit(tile[0],tile[1])
-class Exit (pygame.sprite.Sprite):
-    def __init__(self, img,x,y):
-        pygame.sprite.Sprite.__init__(self)
-        self.rect = self.image.get_rect()
-        self.rect.midtop = (x+Tile_size//2, y (tyles_tipes - self.image.get_height()))
+#class Exit (pygame.sprite.Sprite):
+    #def __init__(self, img,x,y):
+        #pygame.sprite.Sprite.__init__(self)
+        #self.rect = self.image.get_rect()
+        #self.rect.midtop = (x+Tile_size//2, y (tyles_tipes - self.image.get_height()))
 class Decoration(pygame.sprite.Sprite):
     def __init__(self, item_type, x, y):
         pygame.sprite.Sprite.__init__(self)
@@ -321,20 +333,19 @@ player, health_bar = world.process_data(world_data)
 running = True
 while running:
     
-    player.update_animation()
-    player.move(moving_left, moving_right)
-    player.draw()
-    player.updatesporo()
     
     for enemy in sporo_group:
-        enemy.ai()
         enemy.updatesporo()
         enemy.draw()
     clock.tick(Fps)
     draw_bg()
     world.draw()
     health_bar.draw(player.health)
-
+    player.update_animation()
+    player.move(moving_left, moving_right)
+    player.draw()
+    player.updatesporo()
+    
     
     sporo_group.update()
     sporo_group.draw(screen)
