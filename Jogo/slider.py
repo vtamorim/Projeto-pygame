@@ -15,12 +15,14 @@ clock = pygame.time.Clock()
 Fps = 60
 gravity = 0.75
 Tile_size = 40
-
+scool_th = 200
 rows = 16
 cols = 150
 Tile_size = screen_height // rows 
 tyles_tipes = 17
 lvl = 1
+screen_scroll = 0
+bg_scroll = 0
 # Controle de movimento e ações
 moving_left = False
 moving_right = False
@@ -31,7 +33,21 @@ special_attack = False
 special_moving = False
 original_position = None  
 shoot = False
-
+#4 imagens
+tree_1img =pygame.image.load('tileset_png/assets-fundo/trees.png').convert_alpha()
+tree_2img =pygame.image.load('tileset_png/assets-fundo/trees1.png').convert_alpha()
+far_clouds = pygame.image.load('tileset_png/assets-fundo/far-clouds.png').convert_alpha()
+near_clods = pygame.image.load('tileset_png/assets-fundo/near-clouds.png').convert_alpha()
+far_moutain = pygame.image.load('tileset_png/assets-fundo/far-mountains.png').convert_alpha()
+mountain = pygame.image.load('tileset_png/assets-fundo/mountains.png').convert_alpha()
+sky = pygame.image.load('tileset_png/assets-fundo/sky.png').convert_alpha()
+sky = pygame.transform.scale(sky,(screen_width,screen_height))
+mountain = pygame.transform.scale(mountain,(screen_width,screen_height))
+far_moutain = pygame.transform.scale(far_moutain,(screen_width,screen_height))
+far_clouds = pygame.transform.scale(far_clouds,(screen_width,screen_height +90))
+near_clods = pygame.transform.scale(near_clods,(610,550))
+tree_1img = pygame.transform.scale(tree_1img,(screen_width,screen_height))
+tree_2img = pygame.transform.scale(tree_2img, (screen_width,screen_height - 100))
 img_list = []
 for x in range(tyles_tipes):
     img = pygame.image.load(f'tileset_png/tile/{x}.png')
@@ -44,7 +60,17 @@ red = (255, 0, 0)
 
 def draw_bg():
     screen.fill(BG)
-
+    screen.blit(sky,(0,0))
+    screen.blit(far_moutain,(0,0))
+    screen.blit(near_clods,(0,0))
+    screen.blit(far_clouds,(0,0))
+    
+    screen.blit(mountain,(0,screen_height - mountain.get_height() - 40))
+    screen.blit(tree_1img,(0,screen_height -tree_1img.get_height() - 20))
+    screen.blit(tree_2img,(0,screen_height - tree_2img.get_height()))
+    #screen_height - tree_2img.get_height() - 50
+    
+    
 class Principal(pygame.sprite.Sprite):
     def __init__(self, char_type, x, y, scale, speed):
         pygame.sprite.Sprite.__init__(self)
@@ -133,6 +159,7 @@ class Principal(pygame.sprite.Sprite):
                 special_attack = False  
 
     def move(self, moving_left, moving_right):
+        screen_scroll  = 0
         dx = 0
         dy = 0
         if moving_left:
@@ -178,6 +205,13 @@ class Principal(pygame.sprite.Sprite):
 
         self.rect.x += dx
         self.rect.y += dy
+
+        if self.char_type == 'Personagem Principal':
+            if self.rect.right > screen.get_width() - scool_th or self.rect.left < scool_th:
+                self.rect.x  -= dx
+                screen_scroll = -dx
+        return screen_scroll 
+        
     def shoot(self):
         if self.sporo_cooldown == 0:
             self.sporo_cooldown = 20  # Tempo menor para evitar travamentos
@@ -211,6 +245,7 @@ class Principal(pygame.sprite.Sprite):
                     self.idling_counter -= 1
                     if self.idling_counter <= 0:
                         self.idling = False
+        self.rect.x  += screen_scroll
     def special_attack_move(self):
         global special_moving, original_position
         if not special_moving:
@@ -257,7 +292,7 @@ class World():
                         player = Principal('Personagem Principal', x*Tile_size, y*Tile_size, 1.65, 3)
                         health_bar = hearthbar(10,10,player.health,player.health)
                     elif tile == 14:
-                        cogumelo = Principal('tileset_png/inimigo_cogumelo', x*Tile_size,y*Tile_size,0.9,1)
+                        cogumelo = Principal('tileset_png/inimigo_cogumelo', x*Tile_size + 35,y*Tile_size + 30,0.9,1)
                         sporo_group.add(cogumelo)
                     elif tile == 8:
                         pass
@@ -266,6 +301,7 @@ class World():
         return player, health_bar
     def draw(self):
         for tile in self.obstacle_list:
+            tile [1][0] += screen_scroll
             screen.blit(tile[0],tile[1])
 #class Exit (pygame.sprite.Sprite):
     #def __init__(self, img,x,y):
@@ -290,6 +326,10 @@ class Sporo(pygame.sprite.Sprite):
         self.rect.x -= (self.direction * self.speed)
         if self.rect.right < 0 or self.rect.left > screen_width :
             self.kill()
+        
+        for tile in world.obstacle_list:
+            if tile[1].colliderect(self.rect):
+                self.kill()
         if pygame.sprite.spritecollide(player,sporo_group, False):
             if player.alive:
                 player.health -= 5
@@ -327,24 +367,25 @@ with open(f'level{lvl}_data.csv', newline='') as csvfile:
         for y,tile in enumerate(row):
             world_data[x][y] = int(tile)
     
-print(world_data)
+
 world = World()
 player, health_bar = world.process_data(world_data)
 running = True
 while running:
     
     
-    for enemy in sporo_group:
-        enemy.updatesporo()
-        enemy.draw()
+    
     clock.tick(Fps)
     draw_bg()
     world.draw()
     health_bar.draw(player.health)
     player.update_animation()
-    player.move(moving_left, moving_right)
+    screen_scroll = player.move(moving_left, moving_right)
     player.draw()
-    player.updatesporo()
+    for enemy in sporo_group:
+        enemy.updatesporo()
+        enemy.draw()
+        enemy.ai()
     
     
     sporo_group.update()
