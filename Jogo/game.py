@@ -1,46 +1,45 @@
-#Variaveis 
+import pygame
+import sys
 
+# Inicializando o Pygame
+pygame.init()
 
-#Jogador Modo Fácil
-Vida = 150
-Ataque_1 = 15 #Sem Tempo de Recarga
-Ataque_2 = 20 # 1.5 segundos de TdR
-Ataque_Especial = 40 # 2 segundos de TdR
-Ataque_Pulo = 18 # Sem Tempo de Recarga
-Defesa = 10 #O jogador poderá defender de 5 ataques/golpes em um intervalo de tempo
-Velocidade = 1.25
+# Definindo a tela
+screen = pygame.display.set_mode((600, 400))
+pygame.display.set_caption('Pausa no Pygame')
 
-#Jogador Modo Médio
-Vida = 100
-Ataque_1 = 10 #Sem Tempo de Recarga
-Ataque_2 = 15 # 1.5 segundos de TdR
-Ataque_Especial = 45 # 4 Segundos de Tdr
-Ataque_Pulo = 12 # Sem Tempo de Recarga
-Defesa = 5 #O jogador poderá defender de 5 ataques/golpes em um intervalo de tempo
-Velocidade = 1.15
+# Cores
+WHITE = (255, 255, 255)
+RED = (255, 0, 0)
 
+# Variáveis de controle
+paused = False
 
-#Jogador Modo Díficil 
-Vida = 80
-Ataque_1 = 7 #Sem Tempo de Recarga
-Ataque_2 = 10 # 1.5 segundos de TdR
-Ataque_Especial = 40 # 5 segundos de TdR
-Ataque_Pulo = 10 # Sem Tempo de Recarga
-Defesa = 3 #O jogador poderá defender de 5 ataques/golpes em um intervalo de tempo
-Velocidade = 1.05
+# Função para desenhar a tela
+def draw_game():
+    screen.fill(WHITE)
+    pygame.draw.rect(screen, RED, (250, 150, 100, 100))
 
+# Função de pausa
+def pause_game():
+    font = pygame.font.Font(None, 74)
+    text = font.render("PAUSE", True, (0, 0, 0))
+    screen.blit(text, (250, 150))
 
-#Cogumelo Modo Fácil
-Vida = 30 
-Ataque = 10
-Distancia = 3 #Blocos
+# Loop principal
+while True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+        # Alterna o estado de pausa ao pressionar a tecla 'p'
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_p:
+                paused = not paused
 
-#Cogumelo Modo Médio
-Vida = 35
-Ataque = 15
-Distancia = 5 #Blocos
+    if paused:
+        pause_game()  # Exibe a tela de pausa
+    else:
+        draw_game()  # Desenha o jogo normalmente
 
-#Cogumelo Modo Difícil
-Vida = 50
-Ataque = 20
-Distancia = 7 #Blocos
+    pygame.display.flip()  # Atualiza a tela

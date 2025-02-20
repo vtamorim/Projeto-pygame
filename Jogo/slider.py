@@ -7,8 +7,8 @@ pygame.init()
 # Configurações da tela
 screen_width = 1000
 screen_height = 720
-screen = pygame.display.set_mode((screen_width, screen_height))
-pygame.display.set_caption("Jogo")
+screen = pygame.display.set_mode((1000,720))
+pygame.display.set_caption("Lâmina Fúngico")
 
 # Variáveis principais
 clock = pygame.time.Clock()
@@ -33,55 +33,61 @@ special_attack = False
 special_moving = False
 original_position = None  
 shoot = False
-#4 imagens
-tree_1img =pygame.image.load('tileset_png/assets-fundo/trees.png').convert_alpha()
-tree_2img =pygame.image.load('tileset_png/assets-fundo/trees1.png').convert_alpha()
-far_clouds = pygame.image.load('tileset_png/assets-fundo/far-clouds.png').convert_alpha()
-near_clods = pygame.image.load('tileset_png/assets-fundo/near-clouds.png').convert_alpha()
+
+# Carregar imagens
+front = pygame.image.load('tileset_png/assets-fundo/front.png').convert_alpha()
+near_clods = pygame.image.load('tileset_png/assets-fundo/clouds.png').convert_alpha()
 far_moutain = pygame.image.load('tileset_png/assets-fundo/far-mountains.png').convert_alpha()
-mountain = pygame.image.load('tileset_png/assets-fundo/mountains.png').convert_alpha()
 sky = pygame.image.load('tileset_png/assets-fundo/sky.png').convert_alpha()
-sky = pygame.transform.scale(sky,(screen_width,screen_height))
-mountain = pygame.transform.scale(mountain,(screen_width,screen_height))
-far_moutain = pygame.transform.scale(far_moutain,(screen_width,screen_height))
-far_clouds = pygame.transform.scale(far_clouds,(screen_width,screen_height +90))
-near_clods = pygame.transform.scale(near_clods,(610,550))
-tree_1img = pygame.transform.scale(tree_1img,(screen_width,screen_height))
-tree_2img = pygame.transform.scale(tree_2img, (screen_width,screen_height - 100))
+canyon = pygame.image.load('tileset_png/assets-fundo/canyon.png').convert_alpha()
+sky = pygame.transform.scale(sky, (screen_width, screen_height))
+canyon = pygame.transform.scale(canyon, (screen_width, screen_height))
+far_moutain = pygame.transform.scale(far_moutain, (screen_width, screen_height))
+front = pygame.transform.scale(front, (screen_width, screen_height))
+near_clods = pygame.transform.scale(near_clods, (610, 550))
 img_list = []
 for x in range(tyles_tipes):
     img = pygame.image.load(f'tileset_png/tile/{x}.png')
-    img = pygame.transform.scale(img,(Tile_size, Tile_size))
+    img = pygame.transform.scale(img, (Tile_size, Tile_size))
     img_list.append(img)
 
-sporo = pygame.transform.scale(pygame.image.load('tileset_png/ball_sporo.png').convert_alpha(), (8,8))
+sporo = pygame.transform.scale(pygame.image.load('tileset_png/ball_sporo.png').convert_alpha(), (8, 8))
 BG = (144, 201, 120)
 red = (255, 0, 0)
 
 def draw_bg():
+    global bg_scroll
     screen.fill(BG)
-    screen.blit(sky,(0,0))
-    screen.blit(far_moutain,(0,0))
-    screen.blit(near_clods,(0,0))
-    screen.blit(far_clouds,(0,0))
-    
-    screen.blit(mountain,(0,screen_height - mountain.get_height() - 40))
-    screen.blit(tree_1img,(0,screen_height -tree_1img.get_height() - 20))
-    screen.blit(tree_2img,(0,screen_height - tree_2img.get_height()))
-    #screen_height - tree_2img.get_height() - 50
-    
-    
+    width = sky.get_width()
+    for x in range(5):
+        screen.blit(sky, ((x*width) - bg_scroll * 0.5, 0))
+        screen.blit(far_moutain, ((x*width) - bg_scroll * 0.6, 0))
+        screen.blit(near_clods, ((x*width) - bg_scroll * 0.7, 0))
+        screen.blit(canyon, ((x*width) - bg_scroll * 0.8, 0))
+        screen.blit(front, ((x*width) - bg_scroll * 0.9, screen_height - front.get_height() + 10))
+
+def reset_level():
+    cogumelo_group.empty()
+    sporo_group.empty()
+    item_box_group.empty()
+    exit_group.empty()
+    world_data = []
+    for row in range(rows):
+        r = [-1] * cols
+        world_data.append(r)
+    return world_data
 class Principal(pygame.sprite.Sprite):
     def __init__(self, char_type, x, y, scale, speed):
         pygame.sprite.Sprite.__init__(self)
         self.alive = True
+        self.contador = 0
         self.char_type = char_type
         self.speed = speed
-        self.sporo_cooldown = 0 
+        self.sporo_cooldown = 50
         self.direction = 1
         self.jump = False
         self.health = 100
-        self.max_health= 100
+        self.max_health = 100
         self.double_jump = False
         self.in_air = False
         self.vel_y = 0
@@ -93,12 +99,13 @@ class Principal(pygame.sprite.Sprite):
         self.update_time = pygame.time.get_ticks()
         self.move_counter = 0
         self.idling = False
+        self.alpha_value = 255
+        self.fade_out = True
         self.idling_counter = 0
-        self.vision = pygame.Rect(0,0,150,20)
-        # Lista de animações
+        self.vision = pygame.Rect(0, 0, 150, 20)
         self.animation_types = [
             'Parado', 'Flutuo', 'Pulo', 'Ataque 1', 'Ataque 2', 'Ataque Especial',
-            'Ataque no Pulo', 'Defesa', 'Morte', 'Pulo Duplo', 'Sofrendo Dano'
+            'Ataque no Pulo', 'Defesa', 'Morte', 'Sofrendo Dano'
         ]
         
         for animation in self.animation_types:
@@ -112,18 +119,18 @@ class Principal(pygame.sprite.Sprite):
                     temp_list.append(img)    
                 self.animation_list.append(temp_list) 
 
-                
-       
         self.image = self.animation_list[self.action][self.frame_index]
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
         self.width = self.image.get_width()
         self.height = self.image.get_height()    
+
     def updatesporo(self):
         self.update_animation()
         self.check_alive()
         if self.sporo_cooldown > 0:
             self.sporo_cooldown -= 1
+
     def update_animation(self):
         global attacking, defending, special_attack, special_moving
 
@@ -139,22 +146,22 @@ class Principal(pygame.sprite.Sprite):
             self.frame_index += 1
 
         if self.action < len(self.animation_list) and self.frame_index >= len(self.animation_list[self.action]):
-            if self.action in [8, 7]:
+            if self.action in [8, 7,1]:
                 self.frame_index = len(self.animation_list[self.action]) - 1
             else:
                 self.frame_index = 0
 
-            # Finaliza ataques
-            if self.action in [3, 4, 6]:  
+            if self.action in [3, 4, 6, 5]:  
                 self.update_action(0)
                 attacking = False  
+                special_attack = False
 
             if self.action == 5:  
                 if special_moving:
                     self.rect.x = original_position  
-                    special_moving = False  
+                    special_moving = False 
+                    special_attack = False   
                 self.update_action(0)
-                special_attack = False  
 
     def move(self, moving_left, moving_right):
         screen_scroll  = 0
@@ -167,18 +174,16 @@ class Principal(pygame.sprite.Sprite):
             dx = self.speed
             self.flip = False
 
-        # Pulo e Pulo Duplo
         if self.jump:
             if not self.in_air:
                 self.vel_y = -11
                 self.in_air = True
                 self.double_jump = True
-                self.update_action(2)  # Animação de Pulo
+                self.update_action(2)
             elif self.double_jump:  
                 self.vel_y = -11
                 self.double_jump = False
-                self.update_action(9)  # Animação de Pulo Duplo
-            
+                self.update_action(9)
             self.jump = False
 
         self.vel_y += gravity
@@ -186,39 +191,38 @@ class Principal(pygame.sprite.Sprite):
             self.vel_y = 10
         dy += self.vel_y
 
-        # Verifica se está no chão
         for tile in world.obstacle_list:
-            if tile[1].colliderect(self.rect.x+dx, self.rect.y,self.width,self.height):
+            if tile[1].colliderect(self.rect.x + dx, self.rect.y, self.width, self.height):
                 dx = 0
             if tile[1].colliderect(self.rect.x, self.rect.y + dy, self.width, self.height):
-                if self.vel_y < 0 :
-                    self.vel_y  = 0
+                if self.vel_y < 0:
+                    self.vel_y = 0
                     dy = tile[1].bottom - self.rect.top
                 elif self.vel_y >= 0:
                     self.vel_y = 0
                     self.in_air = False
                     dy = tile[1].top - self.rect.bottom
-                    
-
-
+        level_complete = False
+        if pygame.sprite.spritecollide(player, exit_group, False):
+            level_complete = True
         self.rect.x += dx
         self.rect.y += dy
 
         if self.char_type == 'Personagem Principal':
             if self.rect.right > screen.get_width() - scool_th or self.rect.left < scool_th:
-                self.rect.x  -= dx
+                self.rect.x -= dx
                 screen_scroll = -dx
-        return screen_scroll 
-        
+        return screen_scroll, level_complete
+
     def ai(self):
         if self.alive and player.alive:
             if self.idling == False and random.randint(1, 200) == 1:
                 self.idling = True
                 self.idling_counter = 50
             if self.vision.colliderect(player.rect):
-                self.update_action(1)  # Idle animation
+                self.update_action(1)
                 if self.sporo_cooldown == 0:
-                    self.shoot()  # Atira um sporo
+                    self.shoot()
             else:
                 if self.idling == False:
                     if self.direction == 1:
@@ -240,31 +244,44 @@ class Principal(pygame.sprite.Sprite):
 
     def shoot(self):
         if self.sporo_cooldown == 0:
-            self.sporo_cooldown =5 # Cooldown para o próximo disparo
+            self.sporo_cooldown = 50
             new_sporo = Sporo(self.rect.centerx + (self.direction * self.rect.width * 0.6),
                               self.rect.centery, self.direction)
             sporo_group.add(new_sporo)
 
     def special_attack_move(self):
-        global special_moving, original_position
-        if not special_moving:
-            original_position = self.rect.x  # Salva a posição inicial
-            if self.flip: 
-                self.rect.x = cogumelo.rect.x  # Move para trás se estiver virado
-            else:
-                self.rect.x =cogumelo.rect.x  # Move para frente se estiver normal
-            special_moving = True  
+        self.vision.center = (self.rect.centerx - 75 * self.direction, self.rect.centery)
+        if self.vision.colliderect(cogumelo.rect):
+            global special_moving, original_position  
+            if not special_moving:
+                original_position = self.rect.x 
+                if self.flip: 
+                    self.rect.x = cogumelo.rect.x 
+                else:
+                    self.rect.x = cogumelo.rect.x 
+                special_moving = True  
 
     def update_action(self, new_action):
         if new_action != self.action:
             self.action = new_action
             self.frame_index = 0
             self.update_time = pygame.time.get_ticks()
+
     def check_alive(self):
         if self.health <= 0:
             self.health = 0
             self.speed = 0
             self.alive = False
+            self.update_action(8)  # Morte
+
+    def take_damage(self, amount):
+        self.health -= amount
+        if self.alive:
+            self.update_action(1)  # Sofrendo Dano
+        if self.health <= 0:
+            self.health = 0
+            self.alive = False
+            self.kill()
             
     def draw(self):
         screen.blit(pygame.transform.flip(self.image, self.flip, False), self.rect)
@@ -292,27 +309,25 @@ class World():
                         health_bar = hearthbar(10, 10, player.health, player.health)
                     elif tile == 14:
                         cogumelo = Principal('tileset_png/inimigo_cogumelo', x * Tile_size + 35, y * Tile_size + 30, 0.9, 1)
-                        cogumelo_group.add(cogumelo)  # Adicione o cogumelo ao grupo
+                        cogumelo_group.add(cogumelo)
                     elif tile == 8:
                         pass
                     elif tile == 16:
                         pass
         return player, health_bar
+
     def draw(self):
         for tile in self.obstacle_list:
-            tile [1][0] += screen_scroll
-            screen.blit(tile[0],tile[1])
-#class Exit (pygame.sprite.Sprite):
-    #def __init__(self, img,x,y):
-        #pygame.sprite.Sprite.__init__(self)
-        #self.rect = self.image.get_rect()
-        #self.rect.midtop = (x+Tile_size//2, y (tyles_tipes - self.image.get_height()))
+            tile[1][0] += screen_scroll
+            screen.blit(tile[0], tile[1])
+
 class Decoration(pygame.sprite.Sprite):
     def __init__(self, item_type, x, y):
         pygame.sprite.Sprite.__init__(self)
-        self.image =img
+        self.image = img
         self.rect = self.image.get_rect()
-        self.rect.midtop = (x+Tile_size//2, y (tyles_tipes - self.image.get_height()))
+        self.rect.midtop = (x + Tile_size // 2, y - self.image.get_height())
+
 class Sporo(pygame.sprite.Sprite):
     def __init__(self, x, y, direction, principal):
         pygame.sprite.Sprite.__init__(self)
@@ -338,153 +353,206 @@ class Sporo(pygame.sprite.Sprite):
                 self.kill()
 
     def updatesporo(self):
-        
         self.principal.update_animation()  
         self.principal.check_alive()  
         if self.principal.sporo_cooldown > 0:
             self.principal.sporo_cooldown -= 1
 
-    def __init__(self, x,y,direction):
+    def __init__(self, x, y, direction):
         pygame.sprite.Sprite.__init__(self)
         self.speed = 10
         self.image = sporo
         self.rect = self.image.get_rect()
-        self.rect.center =(x,y)
+        self.rect.center = (x, y)
         self.direction = direction
         self.principal = Principal
+
     def update(self):
         self.rect.x -= (self.direction * self.speed)
-        if self.rect.right < 0 or self.rect.left > screen_width :
+        if self.rect.right < 0 or self.rect.left > screen_width:
             self.kill()
         
         for tile in world.obstacle_list:
             if tile[1].colliderect(self.rect):
                 self.kill()
-        if pygame.sprite.spritecollide(player,sporo_group, False):
+        if pygame.sprite.spritecollide(player, sporo_group, False):
             if player.alive:
                 player.health -= 5
-
                 self.kill()
-        #if pygame.sprite.spritecollide(player,sporo_group, False):
-            #if cogumelo.alive:
-                #self.kill()
+
     def updatesporo(self):
         self.principal.update_animation(self)
         self.principal.check_alive(self)
         
         if self.principal.sporo_cooldown > 0:
             self.sporo_cooldown -= 1
-        
 
 cogumelo_group = pygame.sprite.Group()
 sporo_group = pygame.sprite.Group()
 item_box_group = pygame.sprite.Group()
 exit_group = pygame.sprite.Group()
-class hearthbar():
 
-    def __init__(self,x,y,health,max_health):
-        self.x  = x
+class hearthbar():
+    def __init__(self, x, y, health, max_health):
+        self.x = x
         self.y = y
         self.health = health
         self.max_health = max_health
-    def draw(self,health):
+
+    def draw(self, health):
         self.health = health
         ratio = self.health / self.max_health   
-        pygame.draw.rect(screen,(0,0,0), (self.x - 2, self.y - 2, 150,20))
-        pygame.draw.rect(screen,red, (self.x,self.y, 150, 20))
-        pygame.draw.rect(screen,(0,255,0),(self.x,self.y,150 * ratio, 20))
+        pygame.draw.rect(screen, (0, 0, 0), (self.x - 2, self.y - 2, 150, 20))
+        pygame.draw.rect(screen, red, (self.x, self.y, 150, 20))
+        pygame.draw.rect(screen, (0, 255, 0), (self.x, self.y, 150 * ratio, 20))
+exit_group.update()
+def start_game(slider_value_fps, slider_value_volume, dif_sel, font_path_options, lvl = 1):
+    global running, player, health_bar, world_data, world, screen_scroll, cogumelo, moving_left, moving_right, attacking, defending, double_jump, special_attack, special_moving, original_position, shoot, bg_scroll
+    Fps = slider_value_fps
+    dif_sel = dif_sel
+    paused = False
+    world_data = []
+    for row in range(rows):
+        r = [-1] * cols
+        world_data.append(r)
+    with open(f'level{lvl}_data.csv', newline='') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',')
+        for x, row in enumerate(reader):
+            for y, tile in enumerate(row):
+                world_data[x][y] = int(tile)
 
-
-world_data = []
-for row in range(rows):
-    r = [-1] * cols
-    world_data.append(r)
-with open(f'level{lvl}_data.csv', newline='') as csvfile:
-    reader = csv.reader(csvfile, delimiter=',')
-    for x,row in enumerate(reader):
-        for y,tile in enumerate(row):
-            world_data[x][y] = int(tile)
-    
-
-world = World()
-player, health_bar = world.process_data(world_data)
-running = True
-while running:
-    clock.tick(Fps)
-    draw_bg()
-    world.draw()
-    health_bar.draw(player.health)
-    player.update_animation()
-    screen_scroll = player.move(moving_left, moving_right)
-    player.draw()
-
-    # Atualize e desenhe os inimigos cogumelos
-    for cogumelo in cogumelo_group:
-        cogumelo.ai()
-        cogumelo.update_animation()
-        cogumelo.draw()
-
-    sporo_group.update()
-    sporo_group.draw(screen)
-
-    if player.alive:
-        if defending:
-            player.update_action(7)  # Defesa
-        elif special_attack:
-            player.update_action(5)  # Ataque Especial
-            player.special_attack_move()
-        elif player.in_air:
-            if player.double_jump:
-                player.update_action(9)  # Pulo Duplo
-            else:
-                player.update_action(2)  # Pulo
-        elif moving_left or moving_right:
-            player.update_action(1)  # Movimento
-        elif attacking:
-            if player.attack_type == 1:
-                player.update_action(3)  # Ataque 1
-            elif player.attack_type == 2:
-                player.update_action(4)  # Ataque 2
-            elif player.attack_type == 3:
-                player.update_action(6)  # Ataque no Pulo
-        else:
-            player.update_action(0)  # Parado
+    world = World()
+    player, health_bar = world.process_data(world_data)
+    running = True
+    dano = 0 
+    if dif_sel == "Fácil":
+        player.health = 150
+        player.max_health = 150
+        player.speed = 3.15
+        dano = 10
+    elif dif_sel == "Médio":
+        player.health = 100
+        player.max_health = 100
+        player.speed = 3.10
+        dano = 95
     else:
-        player.update_action(8)
+        player.health = 80
+        player.max_health = 80
+        player.speed = 3.00
+        dano = 20
+    while running:
+        
+        clock.tick(Fps)
+        draw_bg()
+        world.draw()
+        health_bar.draw(player.health)
+        player.update_animation()
+        screen_scroll,level_complete = player.move(moving_left, moving_right)
+        bg_scroll -= screen_scroll
+        if level_complete:
+            lvl += 1
+            bg_scroll = 0
+            world_data = reset_level()
+        player.draw()
+        player.check_alive()
+        if player.rect.y >= screen_height:
+            player.health = 0
+            player.alive = False
+            player.update_action(8)
+        for cogumelo in cogumelo_group:
+            cogumelo.updatesporo()
+            cogumelo.ai()
+            cogumelo.update_animation()
+            cogumelo.draw()
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        if event.type == pygame.KEYUP:
-            if event.key == pygame.K_a:
-                moving_left = False
-            if event.key == pygame.K_d:
-                moving_right = False
-            if event.key == pygame.K_s:
-                defending = False
-            if event.key == pygame.K_q:
-                special_attack = True
+            # Verifique a colisão entre o jogador e o cogumelo
+            if attacking and player.rect.colliderect(cogumelo.rect):
+                cogumelo.take_damage(25)  # Dano ao cogumelo
+                attacking = False
+            elif not attacking and cogumelo.alive:
+                cogumelo.update_action(0) 
 
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1 and not attacking:
-                attacking = True
-                player.attack_type = 1
-            elif event.button == 3 and not attacking:
-                attacking = True
-                player.attack_type = 2
+        sporo_group.update()
+        sporo_group.draw(screen)
 
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_a:
-                moving_left = True
-            if event.key == pygame.K_d:
-                moving_right = True
-            if event.key == pygame.K_w:
-                player.jump = True
-            if event.key == pygame.K_s:
-                defending = True
-            if event.key == pygame.K_q and not special_attack:
-                special_attack = False
+        if player.alive:
+            if defending:
+                player.update_action(7)
+            elif special_attack:
+                player.update_action(5)
+                player.special_attack_move()
+            elif player.in_air:
+                if player.double_jump:
+                    player.update_action(9)
+                else:
+                    player.update_action(2)
+            elif moving_left or moving_right:
+                player.update_action(1)
+            elif attacking:
+                if player.attack_type == 1:
+                    player.update_action(3)
+                elif player.attack_type == 2:
+                    player.update_action(4)
+                elif player.attack_type == 3:
+                    player.update_action(6)
+                
+        else:
+            if player.health == 0:
+                player.update_action(8)
+            reset_option, reset_option_rect = font_path_options.render("Reniciar", ((255,255,255)))
+            reset_option_rect = reset_option.get_rect(center=(500, 500))
+            if pygame.mouse.get_pressed()[0]:
+                screen_scroll = 0
+                if reset_option_rect.collidepoint(pygame.mouse.get_pos()):
+                    bg_scroll = 0
+                    world_data = reset_level()
+                    with open(f'level{lvl}_data.csv', newline='') as csvfile:
+                        reader = csv.reader(csvfile, delimiter=',')
+                        for x, row in enumerate(reader):
+                            for y, tile in enumerate(row):
+                                world_data[x][y] = int(tile)
+                    world = World()
+                    player, health_bar = world.process_data(world_data)
+            pygame.draw.rect(screen, (255, 255, 255), reset_option_rect, 2)
+            pygame.draw.rect(screen, (71, 17, 107), (reset_option_rect.x - 20, reset_option_rect.y - 10, reset_option_rect.width + 40, reset_option_rect.height + 20))
+            screen.blit(reset_option, reset_option_rect)
 
-    pygame.display.flip()
 
-pygame.quit()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_a:
+                    moving_left = False
+                if event.key == pygame.K_d:
+                    moving_right = False
+                if event.key == pygame.K_s:
+                    defending = False
+                if event.key == pygame.K_q:
+                    special_attack = True
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1 and not attacking:
+                    attacking = True
+                    player.attack_type = 1
+                elif event.button == 3 and not attacking:
+                    attacking = True
+                    player.attack_type = 2
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_a:
+                    moving_left = True
+                if event.key == pygame.K_d:
+                    moving_right = True
+                if event.key == pygame.K_w:
+                    player.jump = True
+                if event.key == pygame.K_s:
+                    defending = True
+                if event.key == pygame.K_q:
+                    special_attack = False
+                #if event.key == pygame.K_p:
+                    #paused = not paused
+                    #pause_game()
+        pygame.display.flip()
+
+    pygame.quit()
