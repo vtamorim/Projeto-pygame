@@ -20,13 +20,13 @@ font_path_options = pygame.freetype.Font('Jogo/PixelifySans-VariableFont_wght.tt
 banner=  pygame.image.load('pixil-frame-0 (11).png')
 banner=  pygame.transform.scale(banner,(1000,720))
 def menu(screen, font_path_title, font_path_options, clock, slider_value_fps, slider_handle_volume, dif_sel="Médio"):
-    import slider
+    import game
     running = True
     while running:
         screen.blit(banner,(0,0))
         mouse = pygame.mouse.get_pos()
 
-        title_surface, titlerect = font_path_title.render("Lâmina Fúngica", (255, 255, 255))
+        title_surface, titlerect = font_path_title.render("Frozen Wasteland", (255, 255, 255))
         titlerect = title_surface.get_rect(center=(500, 100))
         screen.blit(title_surface, titlerect)
 
@@ -58,7 +58,7 @@ def menu(screen, font_path_title, font_path_options, clock, slider_value_fps, sl
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1: 
                     if first_option_rect.collidepoint(mouse):
-                        slider.start_game(slider_value_fps,slider_handle_volume,dif_sel,font_path_options)  # Chama start_game() do módulo game
+                        game.wow(slider_value_fps,slider_handle_volume,dif_sel)
                     elif second_option_rect.collidepoint(mouse):
                         config(screen, font_path_title, font_path_options, clock)  # Chama config()
                     elif three_option_rect.collidepoint(mouse):
