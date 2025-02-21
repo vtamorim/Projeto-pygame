@@ -2,6 +2,9 @@ import pygame
 import os
 import random 
 import csv
+import json
+
+
 pygame.init()
 
 # Configurações da tela
@@ -54,7 +57,11 @@ for x in range(tyles_tipes):
 sporo = pygame.transform.scale(pygame.image.load('tileset_png/ball_sporo.png').convert_alpha(), (8, 8))
 BG = (144, 201, 120)
 red = (255, 0, 0)
-
+def conquistas():
+    with open ("Conquistas/conquistas.json","r") as arquivo:
+        return json.load(arquivo)
+    
+conquistas=  conquistas()
 def draw_bg():
     global bg_scroll
     screen.fill(BG)
@@ -146,16 +153,16 @@ class Principal(pygame.sprite.Sprite):
             self.frame_index += 1
 
         if self.action < len(self.animation_list) and self.frame_index >= len(self.animation_list[self.action]):
-            if self.action in [8, 7,1]:
+            if self.action in [8,7,1]:
                 self.frame_index = len(self.animation_list[self.action]) - 1
             else:
                 self.frame_index = 0
 
-            if self.action in [3, 4, 6, 5]:  
+            if self.action in [3, 4, 6,5,1,9,7]:  
                 self.update_action(0)
                 attacking = False  
                 special_attack = False
-
+    
             if self.action == 5:  
                 if special_moving:
                     self.rect.x = original_position  
@@ -170,10 +177,11 @@ class Principal(pygame.sprite.Sprite):
         if moving_left:
             dx = -self.speed
             self.flip = True
+            moving_left = False
         if moving_right:
             dx = self.speed
             self.flip = False
-
+            moving_right = False
         if self.jump:
             if not self.in_air:
                 self.vel_y = -11
@@ -183,7 +191,6 @@ class Principal(pygame.sprite.Sprite):
             elif self.double_jump:  
                 self.vel_y = -11
                 self.double_jump = False
-                self.update_action(9)
             self.jump = False
 
         self.vel_y += gravity
@@ -217,12 +224,13 @@ class Principal(pygame.sprite.Sprite):
     def ai(self):
         if self.alive and player.alive:
             if self.idling == False and random.randint(1, 200) == 1:
+                self.update_action(0)
                 self.idling = True
                 self.idling_counter = 50
+	
             if self.vision.colliderect(player.rect):
-                self.update_action(1)
-                if self.sporo_cooldown == 0:
-                    self.shoot()
+                self.update_action(0)
+                self.shoot()
             else:
                 if self.idling == False:
                     if self.direction == 1:
@@ -231,8 +239,11 @@ class Principal(pygame.sprite.Sprite):
                         ai_moving_right = False
                     ai_moving_left = not ai_moving_right
                     self.move(ai_moving_left, ai_moving_right)
+                    self.update_action(1)#1: run
                     self.move_counter += 1
-                    self.vision.center = (self.rect.centerx - 75 * self.direction, self.rect.centery)
+                    #update ai vision as the enemy moves
+                    self.vision.center = (self.rect.centerx + 75 * self.direction, self.rect.centery)
+
                     if self.move_counter > Tile_size:
                         self.direction *= -1
                         self.move_counter *= -1
@@ -240,6 +251,7 @@ class Principal(pygame.sprite.Sprite):
                     self.idling_counter -= 1
                     if self.idling_counter <= 0:
                         self.idling = False
+
         self.rect.x += screen_scroll
 
     def shoot(self):
@@ -276,6 +288,7 @@ class Principal(pygame.sprite.Sprite):
 
     def take_damage(self, amount):
         self.health -= amount
+    
         if self.alive:
             self.update_action(1)  # Sofrendo Dano
         if self.health <= 0:
@@ -462,12 +475,13 @@ def start_game(slider_value_fps, slider_value_volume, dif_sel, font_path_options
         for cogumelo in cogumelo_group:
             cogumelo.updatesporo()
             cogumelo.ai()
+            cogumelo.update()
             cogumelo.update_animation()
             cogumelo.draw()
 
             # Verifique a colisão entre o jogador e o cogumelo
             if attacking and player.rect.colliderect(cogumelo.rect):
-                cogumelo.take_damage(25)  # Dano ao cogumelo
+                cogumelo.take_damage(100)  # Dano ao cogumelo
                 attacking = False
             elif not attacking and cogumelo.alive:
                 cogumelo.update_action(0) 
@@ -483,7 +497,7 @@ def start_game(slider_value_fps, slider_value_volume, dif_sel, font_path_options
                 player.special_attack_move()
             elif player.in_air:
                 if player.double_jump:
-                    player.update_action(9)
+                    player.update_action(2)
                 else:
                     player.update_action(2)
             elif moving_left or moving_right:
