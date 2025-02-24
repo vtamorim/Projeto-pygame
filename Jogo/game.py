@@ -207,7 +207,7 @@ def wow(fps, volume,difficulty):
 
 			#jump
 			if self.jump == True and self.in_air == False:
-				self.vel_y = -16
+				self.vel_y = -13
 				self.jump = False
 				self.in_air = True
 

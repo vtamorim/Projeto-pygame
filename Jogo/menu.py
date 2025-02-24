@@ -67,23 +67,12 @@ def menu(screen, font_path_title, font_path_options, clock, slider_value_fps, sl
         clock.tick(60)
 
 def config(screen, font_path_title, font_path_options, clock):
-    def draw_rounded_rect(surface, color, rect, radius):
-        pygame.draw.circle(surface, color, (rect.left + radius, rect.top + radius), radius)  
-        pygame.draw.circle(surface, color, (rect.right - radius, rect.top + radius), radius)  
-        pygame.draw.circle(surface, color, (rect.left + radius, rect.bottom - radius), radius)  
-        pygame.draw.circle(surface, color, (rect.right - radius, rect.bottom - radius), radius) 
 
-        # Desenhando os lados retangulares
-        pygame.draw.rect(surface, color, pygame.Rect(rect.left + radius, rect.top, rect.width - 2 * radius, rect.height))  # Parte central horizontal
-        pygame.draw.rect(surface, color, pygame.Rect(rect.left, rect.top + radius, rect.width, rect.height - 2 * radius))  # Parte central vertical
-    color = (255, 255, 255)
-    rect = pygame.Rect(45, 150, 900, 450)
-    radius = 30
-    draw_rounded_rect(screen, color, rect, radius)
+
     def mostrar_opcoes():
         pygame.display.set_caption("Opções")
     dificuldade = ['Fácil', 'Médio', 'Difícil']
-    dif_sel = "Selecionar"
+    dif_sel = "Médio"
     largura_borda = 1
     padding = 30        
     dif_padding = 600
@@ -126,10 +115,15 @@ def config(screen, font_path_title, font_path_options, clock):
 
     while running:
         screen.blit(banner,(0,0))
-        draw_rounded_rect(screen, color, rect, radius)
+        pygame.draw.rect(screen, (255, 255, 255),( 130, 260,700,60))
+        pygame.draw.rect(screen, (71,17 ,107 ), ( 145, 265, 670, 50))
         mouse = pygame.mouse.get_pos()
         arrow = pygame.transform.scale(pygame.image.load("Jogo/arrow.png"),(30,30))
         arrow_rect = arrow.get_rect(topleft = (0,0))
+        pygame.draw.rect(screen, (255, 255, 255),( 130, 330,700,60))
+        pygame.draw.rect(screen, (71,17 ,107 ), ( 145, 335, 670, 50))
+        pygame.draw.rect(screen, (255, 255, 255),( 130, 470,700,60))
+        pygame.draw.rect(screen, (71,17 ,107 ), ( 145, 475, 670, 50))
         
         
         for event in pygame.event.get():
@@ -175,8 +169,8 @@ def config(screen, font_path_title, font_path_options, clock):
             for niveis in dificuldade:
                 texto, texto_rect = font_path_options.render(niveis, (0, 0, 0))
                 texto_rect = texto.get_rect(center=(width // 2.2, dif_padding + 135))
-                pygame.draw.rect(screen, (0, 0, 0), (343, texto_rect.y - 15, 282, 47), largura_borda)
-                pygame.draw.rect(screen, (255,255,255),(344,texto_rect.y-14,280,45))
+                pygame.draw.rect(screen, (0, 0, 0), (283, texto_rect.y - 15, 282, 47), largura_borda)
+                pygame.draw.rect(screen, (71,17,107),(314,texto_rect.y-14,280,45))
                 screen.blit(texto, texto_rect) 
                 dif_padding += 46
                 if event.type == pygame.MOUSEBUTTONDOWN:
