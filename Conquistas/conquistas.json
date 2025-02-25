@@ -1,32 +1,32 @@
-{
-    "primeiro_abate":{
-        "nome":"Começo de Jornada",
-        "descrição":"Abata o primeiro cogumelo!",
-        "desbloqueada":"False"
+[
+    {
+        "condicao":"Sobrevivência a Altura",
+        "mensagem":"Abata o primeiro Inimigo!"
+        
 
     },
-    "massacre":{
-        "nome":"Massacre",
-        "descrição":"Derrote todos os inimigos",
-        "desbloqueada":"False"
-    },
-    "o fim":
     {
-        "nome":"Término do Jogo",
-        "descrição":"Termine a Demo do Jogo",
-        "desbloqueada":"False"
-    },
-    "caçador":
+        "condicao":"Massacre",
+        "mensagem":"Derrote todos os inimigos"
+    
+    }
+,
     {
-        "nome":"Caçador Nato",
-        "descrição":"Derrote o Chefe sem levar dano",
-        "desbloqueada":"False"
+        "condicao":"Término do Jogo",
+        "mensagem":"Termine a Demo do Jogo"
+        
     },
-    "o melhor":
+
     {
-        "nome":"GOAT",
-        "descrição":"Termine a Demo do Jogo sem levar dano",
-        "desbloqueada":"False"
+        "condicao":"Caçador Nato",
+        "mensagem":"Derrote Todos sem Morrer"
+        
+    },
+
+    {
+        "condicao":"GOAT",
+        "mensagem":"Termine a Demo do Jogo com a vida máxima"
+        
     }
     
-}
+]

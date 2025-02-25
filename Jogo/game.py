@@ -4,7 +4,14 @@ import os
 import random
 import csv
 import button
-def wow(fps, volume,difficulty):
+import json
+music2 =pygame.mixer.Sound('audio/music2.mp3')
+# Carregar conquistas do arquivo conquistas.json
+with open('Conquistas/conquistas.json', 'r') as f:
+    conquistas = json.load(f)
+
+first_enemy = False
+def wow(fps, volume,difficulty,medidor):
 	mixer.init()
 	pygame.init()
 
@@ -18,7 +25,7 @@ def wow(fps, volume,difficulty):
 	#set framerate
 	clock = pygame.time.Clock()
 	FPS = fps
-	
+
 	#define game variables
 	GRAVITY = 0.75
 	SCROLL_THRESH = 200
@@ -32,13 +39,15 @@ def wow(fps, volume,difficulty):
 	level = 1
 	start_intro = False
 
-
+	first_enemy = False
 	#define player action variables
 	moving_left = False
 	moving_right = False
 	shoot = False
 
-
+	def show_message(text, font, text_col, x, y):
+		img = font.render(text, True, text_col)
+		screen.blit(img, (x, y))
 
 
 	jump_fx = pygame.mixer.Sound('audio/jump.wav')
@@ -110,7 +119,7 @@ def wow(fps, volume,difficulty):
 			screen.blit(clouds, ((x * width) - bg_scroll * 0.6, 0))
 			screen.blit(far_moutain, ((x * width) - bg_scroll * 0.6, SCREEN_HEIGHT - far_moutain.get_height() - 100))
 			screen.blit(canyon, ((x * width) - bg_scroll * 0.8, SCREEN_HEIGHT - canyon.get_height() + 50))
-			screen.blit(pine1_img, ((x * width) - bg_scroll * 0.7, SCREEN_HEIGHT - pine1_img.get_height() + 50))
+			screen.blit(pine1_img, ((x * width) - bg_scroll * 0.9, SCREEN_HEIGHT - pine1_img.get_height() + 50))
 			
 
 
@@ -154,6 +163,7 @@ def wow(fps, volume,difficulty):
 			self.animation_list = []
 			self.frame_index = 0
 			self.action = 0
+			self.abates= 0
 			self.update_time = pygame.time.get_ticks()
 			#ai specific variables
 			self.move_counter = 0
@@ -349,11 +359,15 @@ def wow(fps, volume,difficulty):
 
 
 		def check_alive(self):
+			global first_enemy
 			if self.health <= 0:
 				self.health = 0
 				self.speed = 0
 				self.alive = False
 				self.update_action(3)
+				if self.char_type == 'enemy' and first_enemy == False:
+					first_enemy = True
+				
 
 
 		def draw(self):
@@ -592,7 +606,14 @@ def wow(fps, volume,difficulty):
 
 	run = True
 	while run:
-
+		medidor = 0.03
+		music2.set_volume(medidor)
+		music2.play()
+		def verificar_conquistas():
+			global first_enemy
+			for conquista in conquistas:
+				if conquista['condicao'] == 'primeiro_inimigo' and first_enemy:
+					show_message(conquista['mensagem'], font, RED, SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT // 2 - 50)
 		clock.tick(FPS)
 
 		if True:
@@ -604,6 +625,9 @@ def wow(fps, volume,difficulty):
 			health_bar.draw(player.health)
 			#show ammo
 
+			
+			# Verificar e exibir conquistas
+			verificar_conquistas()
 
 			player.update()
 			player.draw()
@@ -716,3 +740,4 @@ def wow(fps, volume,difficulty):
 		pygame.display.update()
 
 	pygame.quit()
+
